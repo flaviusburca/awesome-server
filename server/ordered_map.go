@@ -29,12 +29,15 @@ func NewOrderedMap() *OrderedMap {
 func (m *OrderedMap) Add(key, value string) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.data[key]; ok {
-		m.data[key].Value = value
-		return
+	if elem, ok := m.data[key]; ok {
+		// Key already exists, update the value
+		elem.Value.(*entry).value = value
+	} else {
+		// Insert new entry
+		e := &entry{key, value}
+		el := m.order.PushBack(e)
+		m.data[key] = el
 	}
-	elem := m.order.PushBack(&entry{key, value})
-	m.data[key] = elem
 }
 
 // Delete removes a key-value pair from the map.
