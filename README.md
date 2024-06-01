@@ -19,8 +19,8 @@ The server handles commands sent by clients to manipulate an in-memory ordered m
 - The server processes messages from the queue in parallel using goroutines to maximize throughput. Some tuning can be done using the GOMAXPROCS parameter.
 - The ordered map is implemented using a combination of a map and a slice to maintain insertion order.
 - The client reads commands from standard input and sends them to the server via RabbitMQ.
-- The server creates files to store the output of the `getItem` and `getAllItems` commands if needed with the `StandardCommandHandle`
-- The `LoggingCommandHandler` logs the commands received by the server and will only log the output of `getItem` and `getAllItems` commands
+- The server creates files to store the output of the `getItem` and `getAllItems` commands if needed with the `StandardCommandHandler`
+- The `NopCommandHandler` will only execute the commands without writing files. Useful for benchmarking.
 
 # Build and Run the project
 
@@ -38,8 +38,14 @@ The server handles commands sent by clients to manipulate an in-memory ordered m
    cd awesome-project
    make
    ```
-   
+      
+   The following binaries will be created in the `build` folder: `client-amd64`, `client-arm64`, `server-amd64`, and `server-arm64`.
+   Makefile targets are available to build the server and client binaries for `amd64` and `arm64` architectures.
+
+
 2. Start the RabbitMQ server:
+
+
 3. Run AwesomeServer:
     ```shell
    ./build/server-amd64
