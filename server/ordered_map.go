@@ -1,17 +1,27 @@
 package server
 
-import "sync"
+import (
+	"container/list"
+	"sync"
+)
 
+// OrderedMap is a thread-safe map that maintains the insertion order of keys.
 type OrderedMap struct {
 	sync.RWMutex
-	data map[string]string
-	keys []string
+	data  map[string]*list.Element
+	order *list.List
+}
+
+// entry is a key-value pair stored in the list.
+type entry struct {
+	key   string
+	value string
 }
 
 func NewOrderedMap() *OrderedMap {
 	return &OrderedMap{
-		data: make(map[string]string),
-		keys: []string{},
+		data:  make(map[string]*list.Element),
+		order: list.New(),
 	}
 }
 
@@ -19,24 +29,21 @@ func NewOrderedMap() *OrderedMap {
 func (m *OrderedMap) Add(key, value string) {
 	m.Lock()
 	defer m.Unlock()
-	if _, exists := m.data[key]; !exists {
-		m.keys = append(m.keys, key)
+	if _, ok := m.data[key]; ok {
+		m.data[key].Value = value
+		return
 	}
-	m.data[key] = value
+	elem := m.order.PushBack(&entry{key, value})
+	m.data[key] = elem
 }
 
 // Delete removes a key-value pair from the map.
 func (m *OrderedMap) Delete(key string) {
 	m.Lock()
 	defer m.Unlock()
-	if _, exists := m.data[key]; exists {
+	if elem, ok := m.data[key]; ok {
+		m.order.Remove(elem)
 		delete(m.data, key)
-		for i, k := range m.keys {
-			if k == key {
-				m.keys = append(m.keys[:i], m.keys[i+1:]...)
-				break
-			}
-		}
 	}
 }
 
@@ -44,17 +51,53 @@ func (m *OrderedMap) Delete(key string) {
 func (m *OrderedMap) Get(key string) (string, bool) {
 	m.RLock()
 	defer m.RUnlock()
-	val, exists := m.data[key]
-	return val, exists
+	elem, ok := m.data[key]
+	if !ok {
+		var zero string
+		return zero, false
+	}
+	return elem.Value.(*entry).value, true
 }
 
 // GetAll returns a copy of the map.
-func (m *OrderedMap) GetAll() map[string]string {
+func (m *OrderedMap) GetAll() []entry {
 	m.RLock()
 	defer m.RUnlock()
-	result := make(map[string]string)
-	for _, key := range m.keys {
-		result[key] = m.data[key]
+	entries := make([]entry, 0, m.order.Len())
+	for elem := m.order.Front(); elem != nil; elem = elem.Next() {
+		e := elem.Value.(*entry)
+		entries = append(entries, *e)
 	}
-	return result
+	return entries
+}
+
+// Keys returns a slice of all keys in insertion order.
+func (m *OrderedMap) Keys() []string {
+	m.RLock()
+	defer m.RUnlock()
+
+	keys := make([]string, 0, m.order.Len())
+	for elem := m.order.Front(); elem != nil; elem = elem.Next() {
+		keys = append(keys, elem.Value.(*entry).key)
+	}
+	return keys
+}
+
+// Values returns a slice of all values in insertion order.
+func (m *OrderedMap) Values() []string {
+	m.RLock()
+	defer m.RUnlock()
+
+	values := make([]string, 0, m.order.Len())
+	for elem := m.order.Front(); elem != nil; elem = elem.Next() {
+		values = append(values, elem.Value.(*entry).value)
+	}
+	return values
+}
+
+// Len returns the number of key-value pairs in the map.
+func (m *OrderedMap) Len() int {
+	m.RLock()
+	defer m.RUnlock()
+	return m.order.Len()
 }

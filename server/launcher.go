@@ -14,7 +14,7 @@ func Launch(ctx *cli.Context) error {
 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 	defer queue.Close()
-	srv := NewServer(queue, NewLoggingCommandHandler(NewOrderedMap()))
+	srv := NewServer(queue, NewStandardCommandHandler(NewOrderedMap()))
 	srv.Start()
 
 	return nil

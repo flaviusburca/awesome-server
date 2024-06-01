@@ -38,8 +38,8 @@ func (h *LoggingCommandHandler) GetItem(key string) {
 func (h *LoggingCommandHandler) GetAllItems() {
 	allItems := h.orderedMap.GetAll()
 	var sb strings.Builder
-	for key, value := range allItems {
-		sb.WriteString(fmt.Sprintf("%s:%s ", key, value))
+	for _, entry := range allItems {
+		sb.WriteString(fmt.Sprintf("%s:%s ", entry.key, entry.value))
 	}
 	if sb.Len() > 0 {
 		log.Println(sb.String())

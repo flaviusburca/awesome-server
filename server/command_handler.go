@@ -61,8 +61,8 @@ func (h *StandardCommandHandler) GetAllItems() {
 		_ = f.Close()
 		return
 	}
-	for key, value := range allItems {
-		_, err := fmt.Fprintf(f, "%s:%s\n", key, value)
+	for _, entry := range allItems {
+		_, err := fmt.Fprintf(f, "%s:%s\n", entry.key, entry.value)
 		if err != nil {
 			log.Printf("Error writing to file: %s", err)
 		}
